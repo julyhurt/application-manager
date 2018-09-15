@@ -29,7 +29,7 @@ enum COMMAND
 
 int preParseArgs(int argc, char* argv[], boost::program_options::variables_map& vmOut, int& cmdOut);
 void printHelp();
-int createToken(std::string& token);
+std::string createToken();
 bool appExist(const std::string& appName, const std::string& queryUrl);
 
 int main(int argc, char * argv[])
@@ -146,31 +146,31 @@ int main(int argc, char * argv[])
 				break;
 			}
 
-			web::json::value obj;
+			web::json::value jsobObj;
 			if (cmd == CMD_REG)
 			{
-				obj["name"] = web::json::value::string(vm["name"].as<string>());
-				obj["command_line"] = web::json::value::string(vm["cmd"].as<string>());
-				obj["run_as"] = web::json::value::string(vm["user"].as<string>());
-				obj["working_dir"] = web::json::value::string(vm["workdir"].as<string>());
-				obj["active"] = web::json::value::number(vm["active"].as<int>());
+				jsobObj["name"] = web::json::value::string(vm["name"].as<string>());
+				jsobObj["command_line"] = web::json::value::string(vm["cmd"].as<string>());
+				jsobObj["run_as"] = web::json::value::string(vm["user"].as<string>());
+				jsobObj["working_dir"] = web::json::value::string(vm["workdir"].as<string>());
+				jsobObj["active"] = web::json::value::number(vm["active"].as<bool>() ? 1 : 0);
 				if (vm.count("time") > 0)
 				{
-					obj["start_time"] = web::json::value::string(vm["time"].as<string>());
+					jsobObj["start_time"] = web::json::value::string(vm["time"].as<string>());
 				}
 				if (vm.count("interval") > 0)
 				{
-					obj["start_interval_seconds"] = web::json::value::number(vm["interval"].as<int>());
+					jsobObj["start_interval_seconds"] = web::json::value::number(vm["interval"].as<int>());
 				}
 
 				if (vm.count("extraTime") > 0)
 				{
-					obj["start_interval_timeout"] = web::json::value::number(vm["extraTime"].as<int>());
+					jsobObj["start_interval_timeout"] = web::json::value::number(vm["extraTime"].as<int>());
 				}
 
 				if (vm.count("keep_running"))
 				{
-					obj["keep_running"] = web::json::value::boolean(vm["keep_running"].as<bool>());
+					jsobObj["keep_running"] = web::json::value::boolean(vm["keep_running"].as<bool>());
 				}
 
 				if (vm.count("daily_start") && vm.count("daily_end"))
@@ -178,7 +178,7 @@ int main(int argc, char * argv[])
 					web::json::value objDailyLimitation = web::json::value::object();
 					objDailyLimitation["daily_start"] = web::json::value::string(vm["daily_start"].as<string>());
 					objDailyLimitation["daily_end"] = web::json::value::string(vm["daily_end"].as<string>());
-					obj["daily_limitation"] = objDailyLimitation;
+					jsobObj["daily_limitation"] = objDailyLimitation;
 				}
 
 
@@ -198,7 +198,7 @@ int main(int argc, char * argv[])
 								objEnvs[GET_STRING_T(envVec.at(0))] = web::json::value::string(GET_STRING_T(envVec.at(1)));
 							}
 						});
-						obj["env"] = objEnvs;
+						jsobObj["env"] = objEnvs;
 					}
 				}
 
@@ -219,21 +219,19 @@ int main(int argc, char * argv[])
 			{
 				if (vm.count("index") > 0)
 				{
-					obj["index"] = web::json::value::number(vm["index"].as<int>());
+					jsobObj["index"] = web::json::value::number(vm["index"].as<int>());
 				}
 				else if (vm.count("name") > 0)
 				{
-					obj["name"] = web::json::value::string(vm["name"].as<string>());
+					jsobObj["name"] = web::json::value::string(vm["name"].as<string>());
 				}
 			}
 			// Create http_client to send the request.
 			http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(port)));
 			http_request request(methodReq);
-			std::string token;
-			createToken(token);
-			request.headers().add("token", token);
+			request.headers().add("token", createToken());
 			request.set_request_uri(web::uri(GET_STRING_T(restPath)));
-			request.set_body(obj);
+			request.set_body(jsobObj);
 			http_response response = client.request(request).get();
 			auto bodyStr = response.extract_utf8string(true).get();
 			if (response.status_code() == status_codes::OK)
@@ -288,20 +286,20 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 		cmdOut = CMD_REG;
 		po::options_description desc("Add a new application:");
 		desc.add_options()
-			("help,h", "produce help message")
 			("name,n", po::value<std::string>(), "application name")
-			("user,u", po::value<std::string>(), "application running user name")
+			("user,u", po::value<std::string>(), "application process running user name")
 			("cmd,c", po::value<std::string>(), "full command line with arguments")
-			("workdir,w", po::value<std::string>(), "working directory")
-			("active,a", po::value<int>()->default_value(1), "application active status: 0 stop,1 start")
-			("time,t", po::value<std::string>(), "start date time for short running app, E.g '2018-01-01 09:00:00'")
-			("daily_start,s", po::value<std::string>(), "daily start time, E.g '09:00:00'")
-			("daily_end,d", po::value<std::string>(), "daily end time, E.g '20:00:00'")
-			("env,e", po::value<std::string>(), "environment variables, E.g env1=value1:env2=value2")
+			("workdir,w", po::value<std::string>()->default_value("/tmp"), "working directory")
+			("active,a", po::value<bool>()->default_value(true), "application active status (start is true, stop is false)")
+			("time,t", po::value<std::string>(), "start date time for short running app (e.g., '2018-01-01 09:00:00')")
+			("daily_start,s", po::value<std::string>(), "daily start time (e.g., '09:00:00')")
+			("daily_end,d", po::value<std::string>(), "daily end time (e.g., '20:00:00')")
+			("env,e", po::value<std::string>(), "environment variables (e.g., env1=value1:env2=value2)")
 			("interval,i", po::value<int>(), "start interval seconds for short running app")
-			("extraTime,x", po::value<int>()->default_value(0), "extra timeout for short running app,the value must less than interval")
+			("extraTime,x", po::value<int>(), "extra timeout for short running app,the value must less than interval  (default 0")
 			("keep_running,k", po::value<bool>()->default_value(false), "monitor and keep running for short running app in start interval")
-			("force,f", "force without confirm.");
+			("force,f", "force without confirm.")
+			("help,h", "produce help message");
 
 		std::vector<std::string> opts = po::collect_unrecognized(parsed.options, po::include_positional);
 		opts.erase(opts.begin());
@@ -313,7 +311,7 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 			|| vm.count("user") == 0
 			|| vm.count("cmd") == 0
 			|| vm.count("workdir") == 0
-			|| vm.count("active") == 0)
+			)
 		{
 			cout << desc << endl;
 			return 1;
@@ -479,14 +477,13 @@ void printHelp()
 	cerr << "Usage:  appmgc [COMMAND] [ARG...] [flags]" << endl;
 }
 
-int createToken(std::string& token)
+std::string createToken()
 {
 	auto now = std::time(nullptr);
 	auto tm = *std::localtime(&now);
 	std::stringstream ss;
 	ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << std::endl;
-	std::string tokenPlain = ss.str();
-	return tokenPlain.length();
+	return ss.str();
 }
 
 bool appExist(const std::string& appName, const std::string& queryUrl)

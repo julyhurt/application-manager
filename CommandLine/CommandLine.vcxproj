@@ -62,7 +62,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>appc</TargetName>
-    <RemoteProjectDir>$(RemoteRootDir)/ApplicationManager</RemoteProjectDir>
+    <RemoteProjectDir>$(RemoteRootDir)/$(ProjectName)</RemoteProjectDir>
     <TargetExt>.out</TargetExt>
   </PropertyGroup>
   <ItemGroup>

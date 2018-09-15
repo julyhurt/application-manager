@@ -1,4 +1,4 @@
-
+#include <cmath>
 #include <cpprest/json.h> // JSON library 
 #include <jsoncpp/json/config.h>
 #include <jsoncpp/json/value.h>
@@ -304,12 +304,13 @@ void RestHandler::handle_error(pplx::task<void>& t)
 
 bool RestHandler::checkToken(const std::string& token)
 {
-	if (token.empty() || token.length() % 16 != 0)
+	auto clientTime = Utility::convertStr2Time(token);
+	auto diff = std::abs(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - clientTime).count());
+	if (diff > 15)
 	{
-		std::string err = "token invalide:bad encrtypted data:" + token;
-		throw std::invalid_argument(err);
+		throw std::invalid_argument("token invalid: untrusted");
 	}
-
+	// TODO: token check here.
 	return true;
 }
 
@@ -321,6 +322,7 @@ std::string RestHandler::getToken(const http_request& message)
 		auto tokenInHeader = message.headers().find("token");
 		token = tokenInHeader->second;
 	}
+	
 	if (token.empty())
 	{
 		throw std::invalid_argument("Access denied:must have token.");
