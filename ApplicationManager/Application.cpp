@@ -295,11 +295,7 @@ bool Application::isInDailyTimeRange()
 			return !(now >= m_dailyLimit->m_endTime && now < m_dailyLimit->m_startTime);
 		}
 	}
-	else
-	{
-		return true;
-	}
-	
+	return true;
 }
 
 void MyProcess::attach(int pid)

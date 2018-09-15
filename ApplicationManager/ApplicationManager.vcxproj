@@ -61,7 +61,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>appmgrsvc</TargetName>
+    <TargetName>appsvc</TargetName>
     <TargetExt>.out</TargetExt>
   </PropertyGroup>
   <ItemGroup>
