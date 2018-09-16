@@ -4,8 +4,8 @@ CXX = g++
 CXXFLAGS = -std=c++11 -ggdb3 -Wall
 OEXT = o
 
-INCLUDES = 
-DEP_LIBS = -lcpprest -lboost_system -lboost_program_options -lglog -lpthread -lssl -lcrypto -ldl
+INCLUDES =
+DEP_LIBS = -lglog -lpthread -lssl -lcrypto -lcpprest -Wl,-Bstatic -lboost_system -lboost_program_options -Wl,-Bdynamic
 
 all : format $(TARGET) 
 

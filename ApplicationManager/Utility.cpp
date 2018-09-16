@@ -141,7 +141,7 @@ std::string Utility::getSelfFullPath()
 	int count = 0;
 	char buf[MAXBUFSIZE] = { 0 };
 #if	!defined(WIN32)
-	count = readlink("/proc/self/exe", buf, MAXBUFSIZE);
+	count = (int)readlink("/proc/self/exe", buf, MAXBUFSIZE);
 #endif
 	if (count < 0 || count >= MAXBUFSIZE)
 	{
