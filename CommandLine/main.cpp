@@ -481,7 +481,7 @@ std::string createToken()
 {
 	// Note: header should not have space !!!
 	// TODO: test token with time
-	auto tokenPlain = Utility::convertTime2Str(std::chrono::system_clock::now())
+	auto tokenPlain = Utility::convertTime2Str(std::chrono::system_clock::now());
 	return Utility::encode64(tokenPlain);
 }
 
