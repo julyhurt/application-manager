@@ -245,9 +245,9 @@ void Application::spawnProcess()
 	const static char fname[] = "Application::spawnProcess() ";
 
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
-	long gid, uid;
+	uid_t gid, uid;
 	Utility::getUid(m_user, uid, gid);
-	int cmdLenth = m_commandLine.length() + ACE_Process_Options::DEFAULT_COMMAND_LINE_BUF_LEN;
+	size_t cmdLenth = m_commandLine.length() + ACE_Process_Options::DEFAULT_COMMAND_LINE_BUF_LEN;
 	int totalEnvSize = 0;
 	int totalEnvArgs = 0;
 	Utility::getEnvironmentSize(m_envMap, totalEnvSize, totalEnvArgs);

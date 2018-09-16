@@ -1,10 +1,10 @@
 
 TARGET = appsvc
 CXX = g++
-CXXFLAGS = -std=c++11 -ggdb3 -Wall
+CXXFLAGS = -std=c++11 -ggdb3 -Wall -static
 OEXT = o
 
-INCLUDES = 
+INCLUDES =
 DEP_LIBS = -ljsoncpp -lcpprest -lboost_thread -lboost_system -lglog -lpthread -lcrypto -lssl -lACE
 
 
