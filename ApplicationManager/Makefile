@@ -1,11 +1,11 @@
 
 TARGET = appsvc
 CXX = g++
-CXXFLAGS = -std=c++11 -ggdb3 -Wall
+CXXFLAGS = -std=c++11 -ggdb3 -Wall -Wl,-Bdynamic
 OEXT = o
 
 INCLUDES =
-DEP_LIBS = -Wl,-Bstatic -ljsoncpp -lcpprest -lboost_thread -lboost_system -lglog -lpthread -lcrypto -lssl -lACE
+DEP_LIBS = -Wl,-Bstatic -ljsoncpp -lcpprest -lboost_thread -lboost_system -lglog -lpthread -lcrypto -lssl -lACE -Wl,-Bdynamic
 
 
 all : format $(TARGET) 
