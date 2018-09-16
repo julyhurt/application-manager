@@ -479,11 +479,10 @@ void printHelp()
 
 std::string createToken()
 {
-	auto now = std::time(nullptr);
-	auto tm = *std::localtime(&now);
-	std::stringstream ss;
-	ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << std::endl;
-	return ss.str();
+	// Note: header should not have space !!!
+	// TODO: test token with time
+	auto tokenPlain = Utility::convertTime2Str(std::chrono::system_clock::now())
+	return Utility::encode64(tokenPlain);
 }
 
 bool appExist(const std::string& appName, const std::string& queryUrl)

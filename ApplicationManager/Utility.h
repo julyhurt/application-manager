@@ -52,6 +52,10 @@ public:
 	// %H:%M:%S
 	static std::chrono::system_clock::time_point convertStr2DayTime(const std::string & strTime);
 	static std::string convertDayTime2Str(const std::chrono::system_clock::time_point & time);
+
+	// Base64
+	static std::string encode64(const std::string &val);
+	static std::string decode64(const std::string &val);
 };
 
 #endif
