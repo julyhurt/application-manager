@@ -320,7 +320,7 @@ std::string RestHandler::getToken(const http_request& message)
 	if (message.headers().has("token"))
 	{
 		auto tokenInHeader = message.headers().find("token");
-		token = tokenInHeader->second;
+		token = Utility::decode64(tokenInHeader->second);
 	}
 	
 	if (token.empty())

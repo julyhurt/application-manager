@@ -18,6 +18,10 @@
 #include <thread>
 #include <iomanip>
 #include <boost/asio/ip/host_name.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
@@ -255,6 +259,23 @@ std::string Utility::convertDayTime2Str(const std::chrono::system_clock::time_po
 	std::stringstream ss;
 	ss << std::put_time(&tm, "%H:%M:%S");
 	return ss.str();
+}
+
+std::string Utility::encode64(const std::string & val)
+{
+	using namespace boost::archive::iterators;
+	using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
+	auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
+	return tmp.append((3 - val.size() % 3) % 3, '=');
+}
+
+std::string Utility::decode64(const std::string & val)
+{
+	using namespace boost::archive::iterators;
+	using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
+	return boost::algorithm::trim_right_copy_if(std::string(It(std::begin(val)), It(std::end(val))), [](char c) {
+		return c == '\0';
+	});
 }
 
 void Utility::splitString(const std::string & source, std::vector<std::string>& result, const std::string & splitFlag)
