@@ -23,7 +23,7 @@ rpm:
 	fpm -s dir -t rpm -v ${version} -n Application-Manager --post-install /opt/appmanager/script/install_ubuntu.sh --before-remove /opt/appmanager/script/pre_uninstall_ubuntu.sh --after-remove /opt/appmanager/script/uninstall_ubuntu.sh /opt/appmanager/
 	
 install:
-	rpm -ivh Application-Manager-${version}-1.x86_64.rpm
+	rpm -ivh Application-Manager-${version}-1.x86_64.rpm --nodeps
 	
 uninstall:
 	rpm -e Application-Manager-${version}-1.x86_64
