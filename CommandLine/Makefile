@@ -1,11 +1,11 @@
 
 TARGET = appc
 CXX = g++
-CXXFLAGS = -std=c++11 -ggdb3 -Wall
+CXXFLAGS = -std=c++11 -ggdb3 -Wall -O2
 OEXT = o
 
 INCLUDES =
-DEP_LIBS = -lglog -lpthread -lssl -lcrypto -lcpprest -Wl,-Bstatic -lboost_system -lboost_program_options -Wl,-Bdynamic
+DEP_LIBS = -lglog -lpthread -lssl -lcrypto -lcpprest -lboost_system -lboost_program_options
 
 all : format $(TARGET) 
 

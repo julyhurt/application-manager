@@ -126,13 +126,9 @@ void RestHandler::handle_post(http_request message)
 					appName = name;
 				}
 			}
-			else if (HAS_JSON_FIELD(jsonApp.as_object(), "index"))
-			{
-				appName = Configuration::instance()->getApp(GET_JSON_INT_VALUE(jsonApp.as_object(), "index"))->getName();
-			}
 			else
 			{
-				throw std::invalid_argument("invalid application index");
+				throw std::invalid_argument("invalid application name");
 			}
 		}
 		else
@@ -231,13 +227,9 @@ void RestHandler::handle_delete(http_request message)
 			{
 				appName = GET_JSON_STR_VALUE(jsonApp.as_object(), "name");				
 			}
-			else if (HAS_JSON_FIELD(jsonApp.as_object(), "index"))
-			{
-				appName = Configuration::instance()->getApp(GET_JSON_INT_VALUE(jsonApp.as_object(), "index"))->getName();
-			}
 			else
 			{
-				throw std::invalid_argument("invalid application index");
+				throw std::invalid_argument("invalid application name");
 			}
 		}
 		else

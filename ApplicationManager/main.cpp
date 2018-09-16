@@ -78,6 +78,7 @@ std::shared_ptr<Configuration> readConfiguration()
 		{
 			LOG(INFO) << "ERROR can not open configuration file <" << jsonPath << ">" << std::endl;
 			config = std::make_shared<Configuration>();
+			throw std::runtime_error("can not open configuration file");
 		}
 		else
 		{

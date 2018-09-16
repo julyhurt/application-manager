@@ -107,7 +107,6 @@ void Configuration::registerApp(std::shared_ptr<Application> app)
 		}
 	}
 	m_apps.push_back(app);
-	app->setIndex(m_apps.size());
 }
 
 int Configuration::getScheduleInterval()
@@ -205,7 +204,6 @@ std::shared_ptr<Application> Configuration::addApp(const web::json::value& jsonA
 		{	
 			// Stop existing app and replace
 			mapApp->stop();
-			app->setIndex(mapApp->getIndex());
 			mapApp = app;
 			update = true;
 		}
@@ -226,7 +224,6 @@ void Configuration::removeApp(const string& appName)
 {
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 	// Update in-memory app
-	int appIndex = 0;
 	for (auto iterA = m_apps.begin(); iterA != m_apps.end();)
 	{
 		if ((*iterA)->getName() == appName)
@@ -236,8 +233,6 @@ void Configuration::removeApp(const string& appName)
 		}
 		else
 		{
-			// Update index
-			(*iterA)->setIndex(++appIndex);
 			iterA++;
 		}
 	}
@@ -318,15 +313,3 @@ std::shared_ptr<Application> Configuration::getApp(const std::string & appName)
 	throw std::invalid_argument("No such application found");
 }
 
-std::shared_ptr<Application> Configuration::getApp(int index)
-{
-	std::lock_guard<std::recursive_mutex> guard(m_mutex);
-	for (auto app : m_apps)
-	{
-		if (app->getIndex() == index)
-		{
-			return app;
-		}
-	}
-	throw std::invalid_argument("No such application found");
-}
