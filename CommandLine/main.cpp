@@ -19,7 +19,7 @@ namespace po = boost::program_options;
 
 enum COMMAND
 {
-	CMD_QUERY = 100,
+	CMD_VIEW = 100,
 	CMD_CONFIG,
 	CMD_START,
 	CMD_STOP,
@@ -30,7 +30,9 @@ enum COMMAND
 int preParseArgs(int argc, char* argv[], boost::program_options::variables_map& vmOut, int& cmdOut);
 void printHelp();
 std::string createToken();
-bool appExist(const std::string& appName, const std::string& queryUrl);
+bool appExist(const std::string& appName);
+http_response requestHttp(const method &mtd, string path);
+int getListenPort();
 
 int main(int argc, char * argv[])
 {
@@ -44,45 +46,20 @@ int main(int argc, char * argv[])
 			return result;
 		}
 
-		// Get listen port
-		int port = DEFAULT_REST_LISTEN_PORT;
-		web::json::value jsonValue;
-		auto configPath = Utility::getSelfFullPath();
-		configPath[configPath.length()] = '\0';
-		ifstream jsonFile(configPath + ".json");
-		if (jsonFile)
-		{
-			std::string str((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
-			jsonValue = web::json::value::parse(GET_STRING_T(str));
-			auto p = GET_JSON_INT_VALUE(jsonValue.as_object(), "RestListenPort");
-			if (p > 1000 && p < 65534)
-			{
-				port = p;
-			}
-		}
-
 		// Get sub argument
 		string restPath;
 		if (cmd == CMD_CONFIG)
 		{
 			restPath = "config";
-			// Create http_client to send the request.
-			http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(port)) + U("/") + GET_STRING_T(restPath));
-			http_response response = client.request(methods::GET).get();
-
-			auto bodyStr = response.extract_utf8string(true).get();
+			auto bodyStr = requestHttp(methods::GET, restPath).extract_utf8string(true).get();
 			cout << "--------------------------------------------------------------------" << endl;
 			std::cout << GET_STD_STRING(bodyStr) << std::endl;
 			cout << "--------------------------------------------------------------------" << endl;
 		}
 
-		if (cmd == CMD_QUERY)
+		if (cmd == CMD_VIEW)
 		{
 			restPath = "view";
-			// Create http_client to send the request.
-			http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(port)) + U("/") + GET_STRING_T(restPath));
-			http_response response = client.request(methods::GET).get();
-
 
 			// Title:
 			std::cout << left;
@@ -97,11 +74,12 @@ int main(int argc, char * argv[])
 				<< endl;
 			cout << "--------------------------------------------------------------------" << endl;
 
-			auto jsonValue = response.extract_json(true).get();
+			auto jsonValue = requestHttp(methods::GET, restPath).extract_json(true).get();
 			auto arr = jsonValue.as_array();
-			for_each(arr.begin(), arr.end(), [](web::json::value &x) {
+			int index = 1;
+			for_each(arr.begin(), arr.end(), [&index](web::json::value &x) {
 				auto jobj = x.as_object();
-				std::cout << setw(3) << GET_JSON_INT_VALUE(jobj, "index");
+				std::cout << setw(3) << index++;
 				std::cout << setw(6) << GET_JSON_STR_VALUE(jobj, "run_as");
 				std::cout << setw(7) << (GET_JSON_INT_VALUE(jobj, "active") == 1 ? "start" : "stop");
 				std::cout << setw(6) << (GET_JSON_INT_VALUE(jobj, "pid") > 0 ? GET_JSON_INT_VALUE(jobj, "pid") : 0);
@@ -203,8 +181,7 @@ int main(int argc, char * argv[])
 				}
 
 
-				const std::string queryUrl = "http://127.0.0.1:" + std::to_string(port) + "/view";
-				if (vm.count("force") == 0 && appExist(vm["name"].as<string>(), queryUrl))
+				if (vm.count("force") == 0 && appExist(vm["name"].as<string>()))
 				{
 					std::cout << "Application already exist.Are you sure you want to update the application (y/n)?" << std::endl;
 					std::string result;
@@ -217,17 +194,13 @@ int main(int argc, char * argv[])
 			}
 			else
 			{
-				if (vm.count("index") > 0)
-				{
-					jsobObj["index"] = web::json::value::number(vm["index"].as<int>());
-				}
-				else if (vm.count("name") > 0)
+				if (vm.count("name") > 0)
 				{
 					jsobObj["name"] = web::json::value::string(vm["name"].as<string>());
 				}
 			}
 			// Create http_client to send the request.
-			http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(port)));
+			http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(getListenPort())));
 			http_request request(methodReq);
 			request.headers().add("token", createToken());
 			request.set_request_uri(web::uri(GET_STRING_T(restPath)));
@@ -251,7 +224,7 @@ int main(int argc, char * argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "ERROR:" << e.what() << endl;
+		std::cout << e.what() << std::endl;
 	}
 	return 0;
 }
@@ -325,6 +298,19 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 				return 1;
 			}
 		}
+		if (appExist(vm["name"].as<string>()))
+		{
+			if (vm.count("force") == 0)
+			{
+				std::cout << "Application already exist, are you sure you want to update the application (y/n)?" << std::endl;
+				std::string result;
+				std::cin >> result;
+				if (result != "y")
+				{
+					return 2;
+				}
+			}
+		}
 		vmOut = vm;
 
 	}
@@ -335,7 +321,6 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 		desc.add_options()
 			("help,h", "produce help message")
 			("name,n", po::value<std::string>(), "remove application by name")
-			("index,i", po::value<int>(), "remove application by index")
 			("force,f", "force without confirm.");
 		std::vector<std::string> opts = po::collect_unrecognized(parsed.options, po::include_positional);
 		opts.erase(opts.begin());
@@ -346,21 +331,28 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 			cout << desc << endl;
 			return 1;
 		}
-		if (vm.count("force") == 0)
+		if (appExist(vm["name"].as<string>()))
 		{
-			std::cout << "Are you sure you want to remove the application (y/n)?" << std::endl;
-			std::string result;
-			std::cin >> result;
-			if (result != "y")
+			if (vm.count("force") == 0)
 			{
-				return 2;
+				std::cout << "Are you sure you want to remove the application (y/n)?" << std::endl;
+				std::string result;
+				std::cin >> result;
+				if (result != "y")
+				{
+					return 2;
+				}
 			}
+		}
+		else
+		{
+			return 3;
 		}
 		vmOut = vm;
 	}
 	else if (cmd == "view")
 	{
-		cmdOut = CMD_QUERY;
+		cmdOut = CMD_VIEW;
 		po::options_description desc("List all application running status:");
 		desc.add_options()
 			("help,h", "produce help message");
@@ -402,27 +394,33 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 		desc.add_options()
 			("help,h", "produce help message")
 			("name,n", po::value<std::string>(), "stop an application by name. use 'all' to stop all applications.")
-			("index,i", po::value<int>(), "stop an application by index.")
 			("force,f", "force without confirm.");
 		std::vector<std::string> opts = po::collect_unrecognized(parsed.options, po::include_positional);
 		opts.erase(opts.begin());
 		po::store(po::command_line_parser(opts).options(desc).run(), vm);
 		po::notify(vm);
 
-		if (vm.count("help") || (vm.count("name") == 0 && vm.count("index") == 0))
+		if (vm.count("help") || (vm.count("name") == 0))
 		{
 			cout << desc << endl;
 			return 1;
 		}
-		if (vm.count("force") == 0)
+		if (appExist(vm["name"].as<string>()))
 		{
-			std::cout << "Are you sure you want to stop the application (y/n)?" << std::endl;
-			std::string result;
-			std::cin >> result;
-			if (result != "y")
+			if (vm.count("force") == 0)
 			{
-				return 2;
+				std::cout << "Are you sure you want to stop the application (y/n)?" << std::endl;
+				std::string result;
+				std::cin >> result;
+				if (result != "y")
+				{
+					return 2;
+				}
 			}
+		}
+		else
+		{
+			throw std::invalid_argument("no such application");
 		}
 		vmOut = vm;
 
@@ -434,15 +432,19 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 		desc.add_options()
 			("help,h", "produce help message")
 			("name,n", po::value<std::string>(), "start application by name. use 'all' to start all applications.")
-			("index,i", po::value<int>(), "start application by index.");
+			;
 		std::vector<std::string> opts = po::collect_unrecognized(parsed.options, po::include_positional);
 		opts.erase(opts.begin());
 		po::store(po::command_line_parser(opts).options(desc).run(), vm);
 		po::notify(vm);
 
-		if (vm.count("help") || (vm.count("name") == 0 && vm.count("index") == 0)) {
+		if (vm.count("help") || (vm.count("name") == 0)) {
 			cerr << desc << endl;
 			return 1;
+		}
+		if (!appExist(vm["name"].as<string>()))
+		{
+			throw std::invalid_argument("no such application");
 		}
 		vmOut = vm;
 	}
@@ -485,11 +487,9 @@ std::string createToken()
 	return Utility::encode64(tokenPlain);
 }
 
-bool appExist(const std::string& appName, const std::string& queryUrl)
+bool appExist(const std::string& appName)
 {
-	http_client client(GET_STRING_T(queryUrl));
-	http_response response = client.request(methods::GET).get();
-	auto jsonValue = response.extract_json(true).get();
+	auto jsonValue = requestHttp(methods::GET, "view").extract_json(true).get();
 	auto arr = jsonValue.as_array();
 	for (auto iter = arr.begin(); iter != arr.end(); iter++)
 	{
@@ -500,4 +500,34 @@ bool appExist(const std::string& appName, const std::string& queryUrl)
 		}
 	}
 	return false;
+}
+
+http_response requestHttp(const method & mtd, string path)
+{
+	// Create http_client to send the request.
+	static auto port = getListenPort();
+	http_client client(U("http://127.0.0.1:") + GET_STRING_T(std::to_string(port)) + U("/") + GET_STRING_T(path));
+	http_response response = client.request(methods::GET).get();
+	return std::move(response);
+}
+
+int getListenPort()
+{
+	// Get listen port
+	int port = DEFAULT_REST_LISTEN_PORT;
+	web::json::value jsonValue;
+	auto configPath = Utility::getSelfFullPath();
+	configPath[configPath.length()] = '\0';
+	ifstream jsonFile(configPath + ".json");
+	if (jsonFile)
+	{
+		std::string str((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
+		jsonValue = web::json::value::parse(GET_STRING_T(str));
+		auto p = GET_JSON_INT_VALUE(jsonValue.as_object(), "RestListenPort");
+		if (p > 1000 && p < 65534)
+		{
+			port = p;
+		}
+	}
+	return port;
 }

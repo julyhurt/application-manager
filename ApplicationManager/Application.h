@@ -47,8 +47,6 @@ public:
 	virtual void start(std::shared_ptr<Application>& self);
 
 	virtual web::json::value AsJson(bool returnRuntimeInfo);
-	void setIndex(int index);
-	int getIndex();
 	virtual void dump();
 
 	static void terminateProcess(std::shared_ptr<MyProcess>& process);
@@ -57,7 +55,6 @@ public:
 
 protected:
 	STATUS m_active;
-	int m_index;
 	std::string m_name;
 	std::string m_commandLine;
 	std::string m_user;

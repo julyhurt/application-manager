@@ -31,7 +31,6 @@ public:
 	std::vector<std::string> stopAllApp();
 	std::vector<std::string> startAllApp();
 	std::shared_ptr<Application> getApp(const std::string& appName);
-	std::shared_ptr<Application> getApp(int index);
 	void stopApp(const std::string& appName);
 	void startApp(const std::string& appName);
 

@@ -11,7 +11,7 @@ using namespace std;
 
 
 Application::Application()
-	:m_active(NORMAL), m_index(0), m_return(0),m_pid(-1)
+	:m_active(NORMAL), m_return(0),m_pid(-1)
 {
 	const static char fname[] = "Application::Application() ";
 	LOG(INFO) << fname << "Entered." << std::endl;
@@ -175,7 +175,6 @@ web::json::value Application::AsJson(bool returnRuntimeInfo)
 	result[GET_STRING_T("active")] = web::json::value::number(m_active);
 	if (returnRuntimeInfo)
 	{
-		result[GET_STRING_T("index")] = web::json::value::number(m_index);
 		result[GET_STRING_T("pid")] = web::json::value::number(m_pid);
 		result[GET_STRING_T("return")] = web::json::value::number(m_return);
 	}
@@ -195,25 +194,12 @@ web::json::value Application::AsJson(bool returnRuntimeInfo)
 	return result;
 }
 
-void Application::setIndex(int index)
-{
-	std::lock_guard<std::recursive_mutex> guard(m_mutex);
-	m_index = index;
-}
-
-int Application::getIndex()
-{
-	std::lock_guard<std::recursive_mutex> guard(m_mutex);
-	return m_index;
-}
-
 void Application::dump()
 {
 	const static char fname[] = "Application::dump() ";
 
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 
-	LOG(INFO) << fname << "m_index:" << m_index << std::endl;
 	LOG(INFO) << fname << "m_name:" << m_name << std::endl;
 	LOG(INFO) << fname << "m_commandLine:" << m_commandLine << std::endl;
 	LOG(INFO) << fname << "m_workdir:" << m_workdir << std::endl;
