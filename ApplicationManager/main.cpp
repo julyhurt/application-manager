@@ -15,9 +15,14 @@
 
 using namespace std;
 
+// whether use a dedicate thread for timer event
+#define USE_SEPERATE_TIMER_THREAD false
+
 static std::shared_ptr<Configuration> readConfiguration();
 static std::string                    m_applicationPath;
 static std::shared_ptr<RestHandler>   m_httpHandler;
+static std::shared_ptr<boost::asio::deadline_timer> m_timer;
+void monitorAllApps(const boost::system::error_code &ec);
 
 int main(int argc, char * argv[])
 {
@@ -32,21 +37,29 @@ int main(int argc, char * argv[])
 		auto config = readConfiguration();
 		m_httpHandler = std::make_shared<RestHandler>(config->getRestListenPort());
 
-		TIMER.init();
-
 		auto apps = config->getApps();
 		auto process = Utility::getProcessList();
 		for_each(apps.begin(), apps.end(), [&process](std::vector<std::shared_ptr<Application>>::reference p) {p->attach(process); });
-		while (true)
+
+		if (USE_SEPERATE_TIMER_THREAD)
 		{
-			std::this_thread::sleep_for(std::chrono::seconds(config->getScheduleInterval()));
-
-			auto apps = config->getApps();
-
-			for (const auto& app : apps)
+			TIMER.init();
+			while (true)
 			{
-				app->invoke();
+				std::this_thread::sleep_for(std::chrono::seconds(config->getScheduleInterval()));
+
+				auto apps = config->getApps();
+
+				for (const auto& app : apps)
+				{
+					app->invoke();
+				}
 			}
+		}
+		else
+		{
+			monitorAllApps(boost::system::error_code());
+			TIMER.runTimerThread();
 		}
 	}
 	catch (const std::exception& e)
@@ -104,3 +117,18 @@ std::shared_ptr<Configuration> readConfiguration()
 	}
 }
 
+void monitorAllApps(const boost::system::error_code &ec)
+{
+	auto apps = Configuration::instance()->getApps();
+	for (const auto& app : apps)
+	{
+		app->invoke();
+	}
+	// Set next timer
+	if (nullptr == m_timer)
+	{
+		m_timer = std::make_shared<boost::asio::deadline_timer>(TIMER.getIO());
+	}
+	m_timer->expires_at(m_timer->expires_at() + boost::posix_time::seconds(Configuration::instance()->getScheduleInterval()));
+	m_timer->async_wait(&monitorAllApps);
+}

@@ -20,8 +20,7 @@ public:
 	void stop();
 	boost::asio::io_service& getIO();
 
-private:
-	void timerThread();
+	void runTimerThread();
 
 private:
 	boost::asio::io_service m_io;
