@@ -19,7 +19,7 @@ Timer::~Timer()
 
 void Timer::init()
 {
-	m_timerThread = std::make_shared<boost::thread>(boost::bind(&Timer::timerThread, &Timer::get_mutable_instance()));
+	m_timerThread = std::make_shared<boost::thread>(boost::bind(&Timer::runTimerThread, &Timer::get_mutable_instance()));
 }
 
 void Timer::stop()
@@ -32,7 +32,7 @@ void Timer::stop()
 	}
 }
 
-void Timer::timerThread()
+void Timer::runTimerThread()
 {
 	LOG(INFO) << "Timer thread started <" << Utility::getThreadId() << ">." << std::endl;
 	m_running = true;
