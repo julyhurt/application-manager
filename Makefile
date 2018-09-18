@@ -4,7 +4,7 @@ all:
 	cd ApplicationManager; make
 	cd CommandLine; make
 	make build_dir
-	make rpm
+	make deb
 
 build_dir:
 	rm -rf release
@@ -15,21 +15,22 @@ build_dir:
 	cp ./script/*.sh ./release/script
 	chmod +x ./release/script/*.sh
 	
-rpm:
+deb:
 	if [ ! -d "/opt/appmanager" ]; then \
 		mkdir /opt/appmanager; \
 	fi
+	rm -rf /opt/appmanager/*
 	cp -rf ./release/* /opt/appmanager
-	fpm -s dir -t rpm -v ${version} -n Application-Manager --post-install /opt/appmanager/script/install_ubuntu.sh --before-remove /opt/appmanager/script/pre_uninstall_ubuntu.sh --after-remove /opt/appmanager/script/uninstall_ubuntu.sh /opt/appmanager/
+	fpm -s dir -t deb -v ${version} -n application-namager --post-install /opt/appmanager/script/install_ubuntu.sh --before-remove /opt/appmanager/script/pre_uninstall_ubuntu.sh --after-remove /opt/appmanager/script/uninstall_ubuntu.sh /opt/appmanager/
 	
 install:
-	rpm -ivh Application-Manager-${version}-1.x86_64.rpm --nodeps
+	dpkg -i application-namager_${version}_amd64.deb
 	
 uninstall:
-	rpm -e Application-Manager-${version}-1.x86_64
+	dpkg -P application-namager
 
 clean:
 	cd CommandLine; make clean
 	cd ApplicationManager; make clean
 	rm -rf release
-	rm -f *.rpm
+	rm -f *.deb
