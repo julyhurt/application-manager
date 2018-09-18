@@ -28,6 +28,5 @@ sudo gem install fpm
 
 ## Installation command on ubuntu
 ```javascript
-sudo apt-get install alien
-sudo rpm -ivh Application-Manager-1.0-1.x86_64.rpm --nodeps
+sudo dpkg application-namager_1.0_amd64.deb
 ```
