@@ -26,7 +26,7 @@ sudo gem install fpm
 
 
 
-## Installation command on ubuntu
+## How to install on ubuntu
 ```javascript
-sudo dpkg application-namager_1.0_amd64.deb
+sudo dpkg -i application-namager_1.0_amd64.deb
 ```
