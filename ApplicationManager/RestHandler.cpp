@@ -56,6 +56,11 @@ void RestHandler::handle_get(http_request message)
 		{
 			message.reply(status_codes::OK, Configuration::prettyJson(GET_STD_STRING(Configuration::instance()->getConfigContentStr())));
 		}
+		else if (Utility::startWith(path, "/view/"))
+		{
+			auto app = path.substr(strlen("/view/"), path.length() - strlen("/view/"));
+			message.reply(status_codes::OK, Configuration::prettyJson(GET_STD_STRING(Configuration::instance()->getApp(app)->AsJson(true).serialize())));
+		}
 		else
 		{
 			throw std::invalid_argument("No such path");

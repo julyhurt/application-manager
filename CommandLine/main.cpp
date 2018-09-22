@@ -61,35 +61,48 @@ int main(int argc, char * argv[])
 		{
 			restPath = "view";
 
-			// Title:
-			std::cout << left;
-			std::cout
-				<< setw(3) << ("id")
-				<< setw(6) << ("user")
-				<< setw(7) << ("active")
-				<< setw(6) << ("pid")
-				<< setw(7) << ("return")
-				<< setw(12) << ("name")
-				<< ("command_line")
-				<< endl;
-			cout << "--------------------------------------------------------------------" << endl;
+			if (vm.count("name") > 0)
+			{
+				restPath += "/";
+				restPath += vm["name"].as<string>();
+			}
+			
+			if (response.status_code() == status_codes::OK)
+			{
+				// Title:
+				std::cout << left;
+				std::cout
+					<< setw(3) << ("id")
+					<< setw(6) << ("user")
+					<< setw(7) << ("active")
+					<< setw(6) << ("pid")
+					<< setw(7) << ("return")
+					<< setw(12) << ("name")
+					<< ("command_line")
+					<< endl;
+				cout << "--------------------------------------------------------------------" << endl;
 
-			auto jsonValue = requestHttp(methods::GET, restPath).extract_json(true).get();
-			auto arr = jsonValue.as_array();
-			int index = 1;
-			for_each(arr.begin(), arr.end(), [&index](web::json::value &x) {
-				auto jobj = x.as_object();
-				std::cout << setw(3) << index++;
-				std::cout << setw(6) << GET_JSON_STR_VALUE(jobj, "run_as");
-				std::cout << setw(7) << (GET_JSON_INT_VALUE(jobj, "active") == 1 ? "start" : "stop");
-				std::cout << setw(6) << (GET_JSON_INT_VALUE(jobj, "pid") > 0 ? GET_JSON_INT_VALUE(jobj, "pid") : 0);
-				std::cout << setw(7) << GET_JSON_INT_VALUE(jobj, "return");
-				std::cout << setw(12) << GET_JSON_STR_VALUE(jobj, "name");
-				std::cout << GET_JSON_STR_VALUE(jobj, "command_line");
+				auto jsonValue = requestHttp(methods::GET, restPath).extract_json(true).get();
+				auto arr = jsonValue.as_array();
+				int index = 1;
+				for_each(arr.begin(), arr.end(), [&index](web::json::value &x) {
+					auto jobj = x.as_object();
+					std::cout << setw(3) << index++;
+					std::cout << setw(6) << GET_JSON_STR_VALUE(jobj, "run_as");
+					std::cout << setw(7) << (GET_JSON_INT_VALUE(jobj, "active") == 1 ? "start" : "stop");
+					std::cout << setw(6) << (GET_JSON_INT_VALUE(jobj, "pid") > 0 ? GET_JSON_INT_VALUE(jobj, "pid") : 0);
+					std::cout << setw(7) << GET_JSON_INT_VALUE(jobj, "return");
+					std::cout << setw(12) << GET_JSON_STR_VALUE(jobj, "name");
+					std::cout << GET_JSON_STR_VALUE(jobj, "command_line");
 
-				std::cout << std::endl;
-			});
-			cout << "--------------------------------------------------------------------" << endl;
+					std::cout << std::endl;
+				});
+				cout << "--------------------------------------------------------------------" << endl;
+			}
+			else
+			{
+				std::cout << response.extract_utf8string(true).get() << std::endl;
+			}
 		}
 
 		if (cmd == CMD_START || cmd == CMD_STOP || cmd == CMD_UNREG || cmd == CMD_REG)
@@ -355,7 +368,9 @@ int preParseArgs(int argc, char* argv[], po::variables_map& vmOut, int& cmdOut)
 		cmdOut = CMD_VIEW;
 		po::options_description desc("List all application running status:");
 		desc.add_options()
-			("help,h", "produce help message");
+			("help,h", "produce help message")
+			("name,n", po::value<std::string>(), "view application by name.")
+			;
 		std::vector<std::string> opts = po::collect_unrecognized(parsed.options, po::include_positional);
 		opts.erase(opts.begin());
 		po::store(po::command_line_parser(opts).options(desc).run(), vm);

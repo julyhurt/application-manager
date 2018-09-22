@@ -298,6 +298,14 @@ void Utility::splitString(const std::string & source, std::vector<std::string>& 
 	}
 }
 
+bool Utility::startWith(const std::string & str, std::string head)
+{
+	if (str.length() >= head.length())
+	{
+		return (str.compare(0, head.size(), head) == 0);
+	}
+	return false;
+}
 
 bool Utility::getUid(std::string userName, long& uid, long& groupid)
 {
