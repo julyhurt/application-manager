@@ -88,7 +88,7 @@ $ appc config
 ## Register a new application
 
 Supported App type|
----|---
+---|
 Long Running application | 
 App run periodic |
 Long running applicatin but will restarted periodic |
