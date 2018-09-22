@@ -61,12 +61,15 @@ int main(int argc, char * argv[])
 		{
 			restPath = "view";
 
+			bool viewAll = true;
 			if (vm.count("name") > 0)
 			{
 				restPath += "/";
 				restPath += vm["name"].as<string>();
+				viewAll = false;
 			}
 			
+			auto response = requestHttp(methods::GET, restPath);
 			if (response.status_code() == status_codes::OK)
 			{
 				// Title:
@@ -82,10 +85,21 @@ int main(int argc, char * argv[])
 					<< endl;
 				cout << "--------------------------------------------------------------------" << endl;
 
-				auto jsonValue = requestHttp(methods::GET, restPath).extract_json(true).get();
-				auto arr = jsonValue.as_array();
+				auto jsonValue = response.extract_json(true).get();
+				web::json::value arr;
+				if (viewAll)
+				{
+					arr = jsonValue;
+				}
+				else
+				{
+					arr = web::json::value::array(1);
+					arr[0] = jsonValue;
+				}
+				
 				int index = 1;
-				for_each(arr.begin(), arr.end(), [&index](web::json::value &x) {
+				auto jsonArr = arr.as_array();
+				for_each(jsonArr.begin(), jsonArr.end(), [&index](web::json::value &x) {
 					auto jobj = x.as_object();
 					std::cout << setw(3) << index++;
 					std::cout << setw(6) << GET_JSON_STR_VALUE(jobj, "run_as");
