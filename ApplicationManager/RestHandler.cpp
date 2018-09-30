@@ -7,6 +7,11 @@
 #include "Configuration.h"
 #include "Utility.h"
 
+#define REST_INFO_PRINT \
+	LOG(INFO) << "Method: " << message.method() << std::endl; \
+	LOG(INFO) << "URI: " << http::uri::decode(message.relative_uri().path()) << std::endl; \
+	LOG(INFO) << "Query: " << http::uri::decode(message.relative_uri().query()) << std::endl << std::endl;
+
 RestHandler::RestHandler(int port)
 {
 	const static char fname[] = "RestHandler::RestHandler() ";
@@ -45,20 +50,21 @@ void RestHandler::handle_get(http_request message)
 {
 	try
 	{
-		//LOG(INFO) << L"get request:" << message.to_string() << endl;
-		auto path = GET_STD_STRING(message.relative_uri().path());
+		REST_INFO_PRINT;
 
-		if (path == string("/view"))
+		auto path = GET_STD_STRING(http::uri::decode(message.relative_uri().path()));
+
+		if (path == string("/app-manager/applications"))
 		{
 			message.reply(status_codes::OK, Configuration::instance()->getApplicationJson());
 		}
-		else if (path == "/config")
+		else if (path == "/app-manager/config")
 		{
 			message.reply(status_codes::OK, Configuration::prettyJson(GET_STD_STRING(Configuration::instance()->getConfigContentStr())));
 		}
-		else if (Utility::startWith(path, "/view/"))
+		else if (Utility::startWith(path, "/app/"))
 		{
-			auto app = path.substr(strlen("/view/"), path.length() - strlen("/view/"));
+			auto app = path.substr(strlen("/app/"), path.length() - strlen("/app/"));
 			message.reply(status_codes::OK, Configuration::prettyJson(GET_STD_STRING(Configuration::instance()->getApp(app)->AsJson(true).serialize())));
 		}
 		else
@@ -80,24 +86,24 @@ void RestHandler::handle_put(http_request message)
 {
 	try
 	{
-		LOG(INFO) << "put request:" << message.to_string() << endl;
+		REST_INFO_PRINT;
 		checkToken(getToken(message));
-		auto path = GET_STD_STRING(message.relative_uri().path());
-		auto jsonApp = message.extract_json(true).get();
-		if (jsonApp.is_null())
-		{
-			throw std::invalid_argument("invalid json format");
-		}
 
-		string regPrefix = "/reg";
-		if (path.find(regPrefix) == 0)
+		auto path = GET_STD_STRING(http::uri::decode(message.relative_uri().path()));
+		if (Utility::startWith(path, "/app/"))
 		{
+			//auto appName = path.substr(strlen("/app/"), path.length() - strlen("/app/"));
+			auto jsonApp = message.extract_json(true).get();
+			if (jsonApp.is_null())
+			{
+				throw std::invalid_argument("invalid json format");
+			}
 			auto app = Configuration::instance()->addApp(jsonApp);
 			message.reply(status_codes::OK, Configuration::prettyJson(GET_STD_STRING(app->AsJson(true).serialize())));
 		}
 		else
 		{
-			message.reply(status_codes::ServiceUnavailable, "No such path");
+			message.reply(status_codes::ServiceUnavailable, "Require action query flag");
 		}
 	}
 	catch (const std::exception& e)
@@ -115,91 +121,38 @@ void RestHandler::handle_post(http_request message)
 {
 	try
 	{
-		LOG(INFO) << "post request:" << message.to_string() << endl;
+		REST_INFO_PRINT;
+
 		checkToken(getToken(message));
-		auto path = GET_STD_STRING(message.relative_uri().path());
-		auto jsonApp = message.extract_json(true).get();
+		auto path = GET_STD_STRING(http::uri::decode(message.relative_uri().path()));
+		auto querymap = web::uri::split_query(web::http::uri::decode(message.relative_uri().query()));
+		if (Utility::startWith(path, "/app/"))
+		{
+			auto appName = path.substr(strlen("/app/"), path.length() - strlen("/app/"));
 
-		string appName;
-		if (!jsonApp.is_null())
-		{
-			if (HAS_JSON_FIELD(jsonApp.as_object(), "name"))
-			{
-				auto name = GET_JSON_STR_VALUE(jsonApp.as_object(), "name");
-				if (name != "all")
-				{
-					appName = name;
-				}
-			}
-			else
-			{
-				throw std::invalid_argument("invalid application name");
-			}
-		}
-		else
-		{
-			throw std::invalid_argument("invalid json format");
-		}
 
-		string stopPrefix = "/stop";
-		string startPrefix = "/start";
-		if (path.find(stopPrefix) == 0)
-		{
-			std::vector<std::string> result;
-			if (appName.length() > 0)
+			if (querymap.find(U("action")) != querymap.end())
 			{
-				Configuration::instance()->stopApp(appName);
-				result.push_back(appName);
-			}
-			else
-			{
-				result = Configuration::instance()->stopAllApp();
-			}
-			string respMsg;
-			if (result.size() > 0)
-			{
-				respMsg = "Application <";
-				for (auto app : result)
+				auto action = GET_STD_STRING(querymap.find(U("action"))->second);
+				if (action == "start")
 				{
-					respMsg += app;
-					respMsg += ",";
+					Configuration::instance()->startApp(appName);
+					message.reply(status_codes::OK, "Success");
 				}
-				respMsg += "> stopped.";
-			}
-			else
-			{
-				respMsg = "No application stopped.";
-			}
-			message.reply(status_codes::OK, respMsg);
-		}
-		else if (path.find(startPrefix) == 0)
-		{
-			std::vector<std::string> result;
-			if (appName.length() > 0)
-			{
-				Configuration::instance()->startApp(appName);
-				result.push_back(appName);
-			}
-			else
-			{
-				result = Configuration::instance()->startAllApp();
-			}
-			string respMsg;
-			if (result.size() > 0)
-			{
-				respMsg = "Application <";
-				for (auto app : result)
+				else if (action == "stop")
 				{
-					respMsg += app;
-					respMsg += ",";
+					Configuration::instance()->stopApp(appName);
+					message.reply(status_codes::OK, "Success");
 				}
-				respMsg += "> started.";
+				else
+				{
+					message.reply(status_codes::ServiceUnavailable, "No such action query flag");
+				}
 			}
 			else
 			{
-				respMsg = "No application started.";
+				message.reply(status_codes::ServiceUnavailable, "Require action query flag");
 			}
-			message.reply(status_codes::OK, respMsg);
 		}
 		else
 		{
@@ -220,49 +173,17 @@ void RestHandler::handle_delete(http_request message)
 {
 	try
 	{
-		LOG(INFO) << "delete request:" <<  message.to_string() << endl;
+		REST_INFO_PRINT;
+
 		checkToken(getToken(message));
 		auto path = GET_STD_STRING(message.relative_uri().path());
-		auto jsonApp = message.extract_json(true).get();
+		
+		if (Utility::startWith(path, "/app/"))
+		{
+			auto appName = path.substr(strlen("/app/"), path.length() - strlen("/app/"));
 
-		string appName;
-		if (!jsonApp.is_null())
-		{
-			if (HAS_JSON_FIELD(jsonApp.as_object(), "name"))
-			{
-				appName = GET_JSON_STR_VALUE(jsonApp.as_object(), "name");				
-			}
-			else
-			{
-				throw std::invalid_argument("invalid application name");
-			}
-		}
-		else
-		{
-			throw std::invalid_argument("invalid json format");
-		}
-		string unregPrefix = "/unreg";
-		if (path.find(unregPrefix) == 0)
-		{
-			std::vector<std::string> result;
 			Configuration::instance()->removeApp(appName);
-			result.push_back(appName);
-			string respMsg;
-			if (result.size() > 0)
-			{
-				respMsg = "Application <";
-				for (auto app : result)
-				{
-					respMsg += app;
-					respMsg += ",";
-				}
-				respMsg += "> stopped and unregisted.";
-			}
-			else
-			{
-				respMsg = "No application unregisted.";
-			}
-			message.reply(status_codes::OK, respMsg);
+			message.reply(status_codes::OK, "Success");
 		}
 		else
 		{
