@@ -127,8 +127,12 @@ void monitorAllApps(const boost::system::error_code &ec)
 	// Set next timer
 	if (nullptr == m_timer)
 	{
-		m_timer = std::make_shared<boost::asio::deadline_timer>(TIMER.getIO());
+		m_timer = std::make_shared<boost::asio::deadline_timer>(TIMER.getIO(), boost::posix_time::seconds(Configuration::instance()->getScheduleInterval()));
+		m_timer->async_wait(&monitorAllApps);
 	}
-	m_timer->expires_at(m_timer->expires_at() + boost::posix_time::seconds(Configuration::instance()->getScheduleInterval()));
-	m_timer->async_wait(&monitorAllApps);
+	else
+	{
+		m_timer->expires_at(m_timer->expires_at() + boost::posix_time::seconds(Configuration::instance()->getScheduleInterval()));
+		m_timer->async_wait(&monitorAllApps);
+	}
 }

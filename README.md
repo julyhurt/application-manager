@@ -1,79 +1,81 @@
+# Introduction
+application-manager is a daemon process running on host to manage different type of applications(process), make sure all defined applications running on-time with defined behavior. provide REST APIs and command-line interface.
+
+This can used to replace Linux cron-tab and supervisor.
+
+## Development tecnical
+- C++11
+- ACE-6.3.3
+- cpprestsdk-2.10.1
+- boost-1.58.0
+- jsoncpp
+- glog
 
 ## REST APIs
 
-
-Method | URL
+Method | URI
 ---|---
-GET | /config
-GET | /view
-GET | /view/$app-name
-PUT | /reg
-POST| /start
-POST| /stop
-DELETE| /unreg
+GET | /app/$app-name
+GET | /app-manager/applications
+GET | /app-manager/config
+PUT | /app/$app-name
+POST| /app/$app-name?action=start
+POST| /app/$app-name?action=stop
+DELETE| /app/$app-name
 
 
 
 
 ## Show all sub command
 
-
 ```
 $ appc
 Commands:
-  view        List all applications
-  config      Display configuration infomration
-  start       Start application[s]
-  stop        Stop application[s]
+  view        List application[s]
+  config      Display configurations
+  start       Start a application
+  stop        Stop a application
   reg         Add a new application
   unreg       Remove an application
 
-Run 'appmgc COMMAND --help' for more information on a command.
+Run 'appc COMMAND --help' for more information on a command.
 
-Usage:  appmgc [COMMAND] [ARG...] [flags]
+Usage:  appc [COMMAND] [ARG...] [flags]
 ```
 
 
 ## Display applications
 
 ```
-$ appc view
+$ appc view 
 id user  active pid   return name        command_line
---------------------------------------------------------------------
-1  root  start  11051 0      TestApp     /bin/sleep 20
---------------------------------------------------------------------
+1  root  start  19574 0      abc         sleep 30
+2  kfc   start  19575 0      def         ping www.google.com
 
-$ appc view --name TestApp
+$ appc view -n def
 id user  active pid   return name        command_line
---------------------------------------------------------------------
-1  root  start  23407 0      TestApp     /bin/sleep 20
---------------------------------------------------------------------
+1  kfc   start  19575 0      def         ping www.google.com
 ```
 
 ## Display configurations
 
 ```
 $ appc config
---------------------------------------------------------------------
+appc config
 {
    "Applications" : [
       {
          "active" : 1,
-         "command_line" : "/bin/sleep 20",
-         "daily_limitation" : {
-            "daily_end" : "23:00:00",
-            "daily_start" : "09:00:00"
-         },
-         "env" : {
-            "TEST_ENV1" : "value",
-            "TEST_ENV2" : "value"
-         },
-         "keep_running" : true,
-         "name" : "TestApp",
+         "command_line" : "sleep 30",
+         "name" : "abc",
          "run_as" : "root",
-         "start_interval_seconds" : 30,
-         "start_interval_timeout" : 0,
-         "start_time" : "2018-01-01 16:00:00",
+         "working_dir" : "/opt"
+      },
+      {
+         "active" : 1,
+         "command_line" : "ping www.google.com",
+         "name" : "def",
+         "run_as" : "kfc",
          "working_dir" : "/opt"
       }
    ],
@@ -81,8 +83,6 @@ $ appc config
    "RestListenPort" : 6060,
    "ScheduleIntervalSec" : 2
 }
-
---------------------------------------------------------------------
 ```
 
 ## Register a new application
@@ -90,12 +90,12 @@ $ appc config
 Supported App type|
 ---|
 Long Running application | 
-App run periodic |
+Period run application |
 Long running applicatin but will restarted periodic |
 Application can be only avialable in a specific time range daily|
 ```
-appc reg 
-Add a new application::
+$ appc reg
+Register a new application::
   -n [ --name ] arg              application name
   -u [ --user ] arg              application process running user name
   -c [ --cmd ] arg               full command line with arguments
@@ -115,9 +115,38 @@ Add a new application::
                                  in start interval
   -f [ --force ]                 force without confirm.
   -h [ --help ]                  produce help message
+  
+$ appc reg -n def -u kfc -c 'ping www.google.com' -w /opt
+Application already exist, are you sure you want to update the application (y/n)?
+y
+{
+   "active" : 1,
+   "command_line" : "ping www.google.com",
+   "name" : "def",
+   "pid" : -1,
+   "return" : 0,
+   "run_as" : "kfc",
+   "working_dir" : "/opt"
+}
 ```
 
 
+
+
 ## Remove a application
+```
+appc unreg -n abc
+Are you sure you want to remove the application (y/n)?
+y
+Success
+```
+
 ## Start a application
+```
+appc start -n def
+```
+
 ## Stop a application
+```
+appc stop -n def
+```

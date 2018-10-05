@@ -53,13 +53,13 @@ void ArgumentParser::parse()
 	}
 	else if (cmd == "view")
 	{
-		// VIEW /app/$app-name
-		// VIEW /app-manager/applications
+		// GET /app/$app-name
+		// GET /app-manager/applications
 		processView();
 	}
 	else if (cmd == "config")
 	{
-		// VIEW /app-manager/config
+		// GET /app-manager/config
 		processConfig();
 	}
 	else if (cmd == "start")
@@ -78,9 +78,9 @@ void ArgumentParser::printMainHelp()
 {
 	std::cout << "Commands:" << std::endl;
 	std::cout << "  view        List application[s]" << std::endl;
-	std::cout << "  config      Display configuration infomration" << std::endl;
-	std::cout << "  start       Start application[s]" << std::endl;
-	std::cout << "  stop        Stop application[s]" << std::endl;
+	std::cout << "  config      Display configurations" << std::endl;
+	std::cout << "  start       Start a application" << std::endl;
+	std::cout << "  stop        Stop a application" << std::endl;
 	std::cout << "  reg         Add a new application" << std::endl;
 	std::cout << "  unreg       Remove an application" << std::endl;
 
@@ -88,12 +88,12 @@ void ArgumentParser::printMainHelp()
 	std::cout << "Run 'appc COMMAND --help' for more information on a command." << std::endl;
 
 	std::cout << std::endl;
-	std::cout << "Usage:  appmgc [COMMAND] [ARG...] [flags]" << std::endl;
+	std::cout << "Usage:  appc [COMMAND] [ARG...] [flags]" << std::endl;
 }
 
 void ArgumentParser::processReg()
 {
-	po::options_description desc("Register a new application:");
+	po::options_description desc("Register a new application");
 	desc.add_options()
 		("name,n", po::value<std::string>(), "application name")
 		("user,u", po::value<std::string>(), "application process running user name")
@@ -202,7 +202,7 @@ void ArgumentParser::processReg()
 
 void ArgumentParser::processUnReg()
 {
-	po::options_description desc("Unregister and remove an application:");
+	po::options_description desc("Unregister and remove an application");
 	desc.add_options()
 		("help,h", "produce help message")
 		("name,n", po::value<std::string>(), "remove application by name")
@@ -211,7 +211,7 @@ void ArgumentParser::processUnReg()
 	moveForwardCommandLineVariables(desc);
 	HELP_ARG_CHECK_WITH_RETURN;
 
-	if (isAppExist(m_commandLineVariables["name"].as<string>()))
+	if (m_commandLineVariables.count("name") && isAppExist(m_commandLineVariables["name"].as<string>()))
 	{
 		if (m_commandLineVariables.count("force") == 0)
 		{
@@ -233,7 +233,7 @@ void ArgumentParser::processUnReg()
 
 void ArgumentParser::processView()
 {
-	po::options_description desc("List application[s]:");
+	po::options_description desc("List application[s]");
 	desc.add_options()
 		("help,h", "produce help message")
 		("name,n", po::value<std::string>(), "view application by name.")
