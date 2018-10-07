@@ -61,6 +61,7 @@ protected:
 	std::string m_workdir;
 	//the exit code of last instance
 	int m_return;
+	std::string m_posixTimeZone;
 	
 	std::shared_ptr<MyProcess> m_process;
 	int m_pid;

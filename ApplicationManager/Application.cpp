@@ -65,6 +65,12 @@ void Application::FromJson(std::shared_ptr<Application>& app, const web::json::o
 			app->m_envMap[GET_STD_STRING((*it).first)] = GET_STD_STRING((*it).second.as_string());
 		}
 	}
+	app->m_posixTimeZone = GET_JSON_STR_VALUE(jobj, "posix_timezone");
+	if (app->m_posixTimeZone.length())
+	{
+		app->m_dailyLimit->m_startTime = DailyLimitation::convert2tzTime(app->m_dailyLimit->m_startTime, app->m_posixTimeZone);
+		app->m_dailyLimit->m_endTime = DailyLimitation::convert2tzTime(app->m_dailyLimit->m_endTime, app->m_posixTimeZone);
+	}
 }
 
 void Application::updatePid()
@@ -191,6 +197,7 @@ web::json::value Application::AsJson(bool returnRuntimeInfo)
 		});
 		result[GET_STRING_T("env")] = envs;
 	}
+	result[GET_STRING_T("posix_timezone")] = web::json::value::string(m_posixTimeZone);
 	return result;
 }
 
@@ -206,6 +213,7 @@ void Application::dump()
 	LOG(INFO) << fname << "m_user:" << m_user << std::endl;
 	LOG(INFO) << fname << "m_status:" << m_active << std::endl;
 	LOG(INFO) << fname << "m_pid:" << m_pid << std::endl;
+	LOG(INFO) << fname << "m_posixTimeZone:" << m_posixTimeZone << std::endl;
 	if (m_dailyLimit != nullptr)
 	{
 		m_dailyLimit->dump();

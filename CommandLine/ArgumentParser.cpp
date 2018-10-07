@@ -100,12 +100,13 @@ void ArgumentParser::processReg()
 		("cmd,c", po::value<std::string>(), "full command line with arguments")
 		("workdir,w", po::value<std::string>()->default_value("/tmp"), "working directory")
 		("active,a", po::value<bool>()->default_value(true), "application active status (start is true, stop is false)")
-		("time,t", po::value<std::string>(), "start date time for short running app (e.g., '2018-01-01 09:00:00')")
+		("start_time,t", po::value<std::string>(), "start date time for short running app (e.g., '2018-01-01 09:00:00')")
 		("daily_start,s", po::value<std::string>(), "daily start time (e.g., '09:00:00')")
 		("daily_end,d", po::value<std::string>(), "daily end time (e.g., '20:00:00')")
 		("env,e", po::value<std::string>(), "environment variables (e.g., env1=value1:env2=value2)")
 		("interval,i", po::value<int>(), "start interval seconds for short running app")
-		("extraTime,x", po::value<int>(), "extra timeout for short running app,the value must less than interval  (default 0")
+		("extraTime,x", po::value<int>(), "extra timeout for short running app,the value must less than interval  (default 0)")
+		("timezone,z", po::value<std::string>(), "posix timezone for the application, reflect [start_time|daily_start|daily_end] (e.g., 'WST+08:00' is Australia Standard Time)")
 		("keep_running,k", po::value<bool>()->default_value(false), "monitor and keep running for short running app in start interval")
 		("force,f", "force without confirm.")
 		("help,h", "produce help message");
@@ -146,9 +147,9 @@ void ArgumentParser::processReg()
 	jsobObj["run_as"] = web::json::value::string(m_commandLineVariables["user"].as<string>());
 	jsobObj["working_dir"] = web::json::value::string(m_commandLineVariables["workdir"].as<string>());
 	jsobObj["active"] = web::json::value::number(m_commandLineVariables["active"].as<bool>() ? 1 : 0);
-	if (m_commandLineVariables.count("time") > 0)
+	if (m_commandLineVariables.count("start_time") > 0)
 	{
-		jsobObj["start_time"] = web::json::value::string(m_commandLineVariables["time"].as<string>());
+		jsobObj["start_time"] = web::json::value::string(m_commandLineVariables["start_time"].as<string>());
 	}
 	if (m_commandLineVariables.count("interval") > 0)
 	{

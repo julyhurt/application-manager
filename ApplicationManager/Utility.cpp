@@ -248,6 +248,10 @@ std::chrono::system_clock::time_point Utility::convertStr2DayTime(const std::str
 		msg += strTime;
 		throw std::invalid_argument(msg);
 	}
+	// Give a fixed date.
+	tm.tm_year = 2000 - 1900;
+	tm.tm_mon = 1;
+	tm.tm_mday = 17;
 	return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
 
@@ -259,6 +263,35 @@ std::string Utility::convertDayTime2Str(const std::chrono::system_clock::time_po
 	std::stringstream ss;
 	ss << std::put_time(&tm, "%H:%M:%S");
 	return ss.str();
+}
+
+std::string Utility::getSystemPosixTimeZone()
+{
+	// https://stackoverflow.com/questions/2136970/how-to-get-the-current-time-zone/28259774#28259774
+	struct tm local_tm;
+	time_t cur_time = 0; // time(NULL);
+	localtime_r(&cur_time, &local_tm);
+
+	std::stringstream ss;
+	ss << std::put_time(&local_tm, "%Z%z");
+	auto str = ss.str();
+
+	// remove un-used zero post-fix : 
+	// CST+0800  => CST+08
+	auto len = str.length();
+	for (size_t i = len - 1; i > 0; i--)
+	{
+		if (str[i] == '0')
+		{
+			str[i] = '\0';
+		}
+		else
+		{
+			str = str.c_str();
+			break;
+		}
+	}
+	return str;
 }
 
 std::string Utility::encode64(const std::string & val)

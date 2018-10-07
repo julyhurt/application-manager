@@ -18,6 +18,7 @@ public:
 
 	virtual web::json::value AsJson();
 	static std::shared_ptr<DailyLimitation> FromJson(const web::json::object& obj);
+	static std::chrono::system_clock::time_point convert2tzTime(std::chrono::system_clock::time_point& dst, std::string& posixTimezone);
 
 	std::chrono::system_clock::time_point m_startTime;
 	std::chrono::system_clock::time_point m_endTime;

@@ -1,7 +1,6 @@
 
 #include <mutex>
 #include <iomanip>
-#include <ctime>
 #include <time.h>
 #include <chrono>
 #include <ace/Time_Value.h>
@@ -32,6 +31,10 @@ void ApplicationShortRun::FromJson(std::shared_ptr<ApplicationShortRun>& app, co
 	if (HAS_JSON_FIELD(jobj, "start_interval_timeout"))
 	{
 		app->m_bufferTime = GET_JSON_INT_VALUE(jobj, "start_interval_timeout");
+	}
+	if (app->m_posixTimeZone.length())
+	{
+		app->m_startTime = DailyLimitation::convert2tzTime(app->m_startTime, app->m_posixTimeZone);
 	}
 }
 
