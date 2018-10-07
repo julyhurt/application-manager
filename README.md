@@ -4,12 +4,19 @@ application-manager is a daemon process running on host to manage different type
 This can used to replace Linux cron-tab and supervisor.
 
 ## Development tecnical
-- C++11
-- ACE-6.3.3
-- cpprestsdk-2.10.1
-- boost-1.58.0
-- jsoncpp
-- glog
+- [C++11](http://www.cplusplus.com/articles/cpp11/)
+- [ACE-6.3.3](https://github.com/DOCGroup/ACE_TAO)
+- [Microsoft cpprestsdk-2.10.1](https://github.com/Microsoft/cpprestsdk)
+- [boost-1.58.0](https://github.com/boostorg/boost)
+- [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
+- [google glog](https://github.com/google/glog)
+- [google CCTZ (++TBD++)](https://github.com/google/cctz)
+
+## Setup build environment on Ubuntu
+```
+apt-get install g++ git make zlib1g-dev libssl-dev cmake
+apt-get install libboost-all-dev libcpprest-dev libjsoncpp-dev libace-dev libgoogle-glog-dev libcctz-dev
+```
 
 ## REST APIs
 
